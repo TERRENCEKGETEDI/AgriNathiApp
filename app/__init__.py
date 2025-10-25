@@ -16,8 +16,7 @@ def create_app():
         level=logging.INFO,
         format='%(asctime)s - %(name)s - %(levelname)s - %(message)s',
         handlers=[
-            logging.FileHandler('logs/agri_nathi.log'),
-            logging.StreamHandler()
+            logging.StreamHandler()  # Only use stream handler for Render
         ]
     )
     app.logger = logging.getLogger('agri_nathi')
