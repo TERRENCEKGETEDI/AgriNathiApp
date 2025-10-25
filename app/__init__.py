@@ -770,6 +770,7 @@ def create_app():
         })
 
     @app.route('/general-advice-audio')
+    @login_required
     def general_advice_audio():
         """Get general farming advice with Zulu audio"""
         result = voice_recognition.get_advice_audio("general farming advice")
