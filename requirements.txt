@@ -5,6 +5,6 @@ python-dotenv==1.0.0
 azure-cognitiveservices-speech==1.32.1
 azure-identity==1.15.0
 Werkzeug==2.3.7
-scikit-learn==1.4.2
+scikit-learn==1.5.1
 numpy==1.26.4
 kaggle==1.6.14
