@@ -1,0 +1,441 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Text to Speech - AgriNathi</title>
+    <link href="https://cdn.jsdelivr.net/npm/bootstrap@5.1.3/dist/css/bootstrap.min.css" rel="stylesheet">
+    <link href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.0.0/css/all.min.css" rel="stylesheet">
+    <style>
+        .tts-container {
+            max-width: 800px;
+            margin: 0 auto;
+        }
+        .speak-btn {
+            width: 120px;
+            height: 120px;
+            border-radius: 50%;
+            border: 4px solid #28a745;
+            background: white;
+            color: #28a745;
+            font-size: 2rem;
+            transition: all 0.3s ease;
+        }
+        .speak-btn:hover {
+            background: #28a745;
+            color: white;
+        }
+        .speak-btn.speaking {
+            background: #dc3545;
+            border-color: #dc3545;
+            color: white;
+            animation: pulse 1s infinite;
+        }
+        @keyframes pulse {
+            0% { transform: scale(1); }
+            50% { transform: scale(1.1); }
+            100% { transform: scale(1); }
+        }
+        .result-card {
+            background: #f8f9fa;
+            border-left: 4px solid #28a745;
+        }
+        .sample-texts {
+            background: #e9ecef;
+            border-radius: 10px;
+            padding: 20px;
+        }
+    </style>
+</head>
+<body>
+    <!-- Navigation -->
+    <nav class="navbar navbar-expand-lg navbar-dark bg-success">
+        <div class="container">
+            <a class="navbar-brand" href="/">
+                <i class="fas fa-leaf me-2"></i>AgriNathi
+            </a>
+            <button class="navbar-toggler" type="button" data-bs-toggle="collapse" data-bs-target="#navbarNav">
+                <span class="navbar-toggler-icon"></span>
+            </button>
+            <div class="collapse navbar-collapse" id="navbarNav">
+                <ul class="navbar-nav ms-auto">
+                    <li class="nav-item">
+                        <a class="nav-link" href="/">Home</a>
+                    </li>
+                    <li class="nav-item">
+                        <a class="nav-link" href="/voice-recognition">Voice Assistant</a>
+                    </li>
+                    <li class="nav-item">
+                        <a class="nav-link active" href="/text-to-speech">Text to Speech</a>
+                    </li>
+                    <li class="nav-item">
+                        <a class="nav-link" href="/weather">Weather</a>
+                    </li>
+                    <li class="nav-item">
+                        <a class="nav-link" href="/plant-scan">Plant Scanner</a>
+                    </li>
+                    {% if session.user_role == 'admin' %}
+                    <li class="nav-item dropdown">
+                        <a class="nav-link dropdown-toggle" href="#" id="adminDropdown" role="button" data-bs-toggle="dropdown">
+                            <i class="fas fa-cog me-1"></i>Admin
+                        </a>
+                        <ul class="dropdown-menu">
+                            <li><a class="dropdown-item" href="/admin"><i class="fas fa-tachometer-alt me-2"></i>Dashboard</a></li>
+                            <li><a class="dropdown-item" href="/admin/users"><i class="fas fa-users me-2"></i>Users</a></li>
+                            <li><a class="dropdown-item" href="/admin/analytics"><i class="fas fa-chart-bar me-2"></i>Analytics</a></li>
+                            <li><a class="dropdown-item" href="/admin/settings"><i class="fas fa-cog me-2"></i>Settings</a></li>
+                            <li><hr class="dropdown-divider"></li>
+                            <li><a class="dropdown-item" href="/logout"><i class="fas fa-sign-out-alt me-2"></i>Logout</a></li>
+                        </ul>
+                    </li>
+                    {% else %}
+                    <li class="nav-item">
+                        <a class="nav-link" href="/logout">Logout</a>
+                    </li>
+                    {% endif %}
+                </ul>
+            </div>
+        </div>
+    </nav>
+
+    <div class="container tts-container py-5">
+        <div class="row justify-content-center">
+            <div class="col-12 text-center mb-5">
+                <h1 class="display-4 fw-bold text-success mb-3">
+                    <i class="fas fa-volume-up me-3"></i>Text to Speech
+                </h1>
+                <p class="lead text-muted">
+                    Convert text to audio in isiZulu and English
+                </p>
+            </div>
+        </div>
+
+        <!-- Text Input Section -->
+        <div class="row justify-content-center mb-5">
+            <div class="col-md-10">
+                <div class="card shadow">
+                    <div class="card-body text-center p-5">
+                        <h3 class="card-title mb-4">
+                            <i class="fas fa-keyboard text-success me-2"></i>
+                            Text to Speech Converter
+                        </h3>
+                        <p class="text-muted mb-4">
+                            Enter text and convert it to speech in your preferred language.<br>
+                            <small class="text-info">Supports isiZulu and English languages</small>
+                        </p>
+
+                        <!-- Text Input -->
+                        <div class="mb-4">
+                            <div class="input-group">
+                                <span class="input-group-text bg-light">
+                                    <i class="fas fa-edit text-success"></i>
+                                </span>
+                                <textarea id="textInput" class="form-control form-control-lg"
+                                        placeholder="Enter text to convert to speech..." rows="3"></textarea>
+                            </div>
+                        </div>
+
+                        <!-- Language and Voice Selection -->
+                        <div class="row mb-4">
+                            <div class="col-md-6">
+                                <label for="languageSelect" class="form-label">Language</label>
+                                <select id="languageSelect" class="form-select">
+                                    <option value="zu-ZA">isiZulu (South Africa)</option>
+                                    <option value="en-US">English (US)</option>
+                                    <option value="en-GB">English (UK)</option>
+                                </select>
+                            </div>
+                            <div class="col-md-6">
+                                <label for="voiceSelect" class="form-label">Voice Gender</label>
+                                <select id="voiceSelect" class="form-select">
+                                    <option value="NEUTRAL">Neutral</option>
+                                    <option value="MALE">Male</option>
+                                    <option value="FEMALE">Female</option>
+                                </select>
+                            </div>
+                        </div>
+
+                        <!-- Speak Button -->
+                        <div class="mb-4">
+                            <button id="speakBtn" class="btn btn-success btn-lg rounded-circle mb-3" style="width: 80px; height: 80px;">
+                                <i class="fas fa-volume-up fa-2x"></i>
+                            </button>
+                            <br>
+                            <small id="speakStatus" class="text-muted">Click to convert text to speech</small>
+                        </div>
+
+                        <!-- Quick Text Buttons -->
+                        <div class="row g-2 mb-4">
+                            <div class="col-6">
+                                <button class="btn btn-outline-primary w-100" onclick="quickText('Sawubona! Ngiyafuna usizo ngezitshalo zami.')">
+                                    <i class="fas fa-seedling me-1"></i> Plant Help
+                                </button>
+                            </div>
+                            <div class="col-6">
+                                <button class="btn btn-outline-info w-100" onclick="quickText('Hello! I need help with my crops.')">
+                                    <i class="fas fa-language me-1"></i> English Greeting
+                                </button>
+                            </div>
+                            <div class="col-6">
+                                <button class="btn btn-outline-warning w-100" onclick="quickText('Ngidinga umanyolo wezitshalo zami.')">
+                                    <i class="fas fa-flask me-1"></i> Fertilizer Info
+                                </button>
+                            </div>
+                            <div class="col-6">
+                                <button class="btn btn-outline-success w-100" onclick="quickText('Weather forecast for farming activities.')">
+                                    <i class="fas fa-cloud-sun me-1"></i> Weather Info
+                                </button>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </div>
+
+        <!-- Results Section -->
+        <div class="row justify-content-center mb-5">
+            <div class="col-md-10">
+                <div id="resultsSection" style="display: none;">
+                    <div class="card result-card shadow">
+                        <div class="card-header bg-success text-white">
+                            <h5 class="mb-0">
+                                <i class="fas fa-volume-up me-2"></i>Text to Speech Result
+                            </h5>
+                            <div class="mt-1">
+                                <small class="text-white-50">
+                                    <i class="fas fa-link me-1"></i>http://127.0.0.1:5000/text-to-speech
+                                </small>
+                            </div>
+                        </div>
+                        <div class="card-body">
+                            <!-- Original Text -->
+                            <div class="mb-4">
+                                <h6 class="text-success mb-3">
+                                    <i class="fas fa-file-alt me-2"></i>Original Text
+                                </h6>
+                                <div class="alert alert-light border-start border-success border-4">
+                                    <strong id="originalText"></strong>
+                                </div>
+                            </div>
+
+                            <!-- Audio Controls -->
+                            <div class="mb-4">
+                                <h6 class="text-primary mb-3">
+                                    <i class="fas fa-play-circle me-2"></i>Audio Playback
+                                </h6>
+                                <div class="text-center">
+                                    <button id="playAudioBtn" class="btn btn-primary btn-lg me-3">
+                                        <i class="fas fa-play me-2"></i>Play Audio
+                                    </button>
+                                    <button id="downloadBtn" class="btn btn-outline-primary btn-lg">
+                                        <i class="fas fa-download me-2"></i>Download
+                                    </button>
+                                </div>
+                                <div class="mt-3">
+                                    <small class="text-muted">
+                                        Language: <span id="audioLanguage"></span> |
+                                        Voice: <span id="audioVoice"></span>
+                                    </small>
+                                </div>
+                            </div>
+
+                            <!-- Action Buttons -->
+                            <div class="text-center">
+                                <button class="btn btn-success me-2" onclick="convertAgain()">
+                                    <i class="fas fa-redo me-1"></i>Convert Again
+                                </button>
+                                <button class="btn btn-outline-primary" onclick="shareAudio()">
+                                    <i class="fas fa-share me-1"></i>Share
+                                </button>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </div>
+
+        <!-- Sample Texts -->
+        <div class="row justify-content-center">
+            <div class="col-md-10">
+                <div class="sample-texts">
+                    <h5 class="text-center mb-3">
+                        <i class="fas fa-lightbulb me-2"></i>Sample Texts You Can Try
+                    </h5>
+                    <div class="row">
+                        <div class="col-md-6">
+                            <h6 class="text-success">isiZulu Examples:</h6>
+                            <ul class="list-unstyled">
+                                <li><i class="fas fa-play text-success me-2"></i>"Sawubona! Ngicela usizo ngezitshalo zami."</li>
+                                <li><i class="fas fa-play text-primary me-2"></i>"Ngidinga umanyolo wezitshalo zami."</li>
+                                <li><i class="fas fa-play text-info me-2"></i>"Isimo sezulu sithini namhlanje?"</li>
+                            </ul>
+                        </div>
+                        <div class="col-md-6">
+                            <h6 class="text-primary">English Examples:</h6>
+                            <ul class="list-unstyled">
+                                <li><i class="fas fa-play text-warning me-2"></i>"Hello! I need help with my plants."</li>
+                                <li><i class="fas fa-play text-secondary me-2"></i>"What fertilizer should I use for my crops?"</li>
+                                <li><i class="fas fa-play text-success me-2"></i>"Please provide weather information for farming."</li>
+                            </ul>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <!-- Footer -->
+    <footer class="bg-success text-white py-4 mt-5">
+        <div class="container">
+            <div class="row">
+                <div class="col-md-6">
+                    <h5><i class="fas fa-leaf me-2"></i>AgriNathi</h5>
+                    <p>Empowering farmers with voice-powered agricultural assistance.</p>
+                </div>
+                <div class="col-md-6 text-md-end">
+                    <p class="mb-0">&copy; 2025 AgriNathi. All rights reserved.</p>
+                </div>
+            </div>
+        </div>
+    </footer>
+
+    <script>
+        let currentAudio = null;
+        let currentAudioData = null;
+
+        const speakBtn = document.getElementById('speakBtn');
+        const speakStatus = document.getElementById('speakStatus');
+        const textInput = document.getElementById('textInput');
+        const languageSelect = document.getElementById('languageSelect');
+        const voiceSelect = document.getElementById('voiceSelect');
+        const resultsSection = document.getElementById('resultsSection');
+        const originalText = document.getElementById('originalText');
+        const playAudioBtn = document.getElementById('playAudioBtn');
+        const downloadBtn = document.getElementById('downloadBtn');
+        const audioLanguage = document.getElementById('audioLanguage');
+        const audioVoice = document.getElementById('audioVoice');
+
+        speakBtn.addEventListener('click', convertTextToSpeech);
+
+        function quickText(text) {
+            textInput.value = text;
+        }
+
+        function convertAgain() {
+            resultsSection.style.display = 'none';
+            textInput.focus();
+        }
+
+        function shareAudio() {
+            if (navigator.share && currentAudioData) {
+                // Create a blob from the audio data
+                const audioBlob = new Blob([Uint8Array.from(atob(currentAudioData), c => c.charCodeAt(0))], { type: 'audio/wav' });
+                const file = new File([audioBlob], 'agri_audio.wav', { type: 'audio/wav' });
+
+                navigator.share({
+                    title: 'AgriNathi Audio',
+                    text: 'Converted text to speech',
+                    files: [file]
+                });
+            } else {
+                alert('Sharing not supported on this device, or no audio available.');
+            }
+        }
+
+        async function convertTextToSpeech() {
+            const text = textInput.value.trim();
+            if (!text) {
+                alert('Please enter some text to convert.');
+                return;
+            }
+
+            const languageCode = languageSelect.value;
+            const voiceGender = voiceSelect.value;
+
+            // Update UI
+            speakBtn.classList.add('speaking');
+            speakBtn.disabled = true;
+            speakStatus.textContent = 'Converting text to speech...';
+
+            try {
+                const response = await fetch('/text-to-speech', {
+                    method: 'POST',
+                    headers: {
+                        'Content-Type': 'application/json',
+                    },
+                    body: JSON.stringify({
+                        text: text,
+                        language_code: languageCode,
+                        voice_gender: voiceGender
+                    })
+                });
+
+                const result = await response.json();
+
+                if (result.success) {
+                    displayResults(result);
+                } else {
+                    alert('Error converting text to speech: ' + result.error);
+                }
+
+            } catch (error) {
+                console.error('Error:', error);
+                alert('Error converting text to speech. Please try again.');
+            } finally {
+                speakBtn.classList.remove('speaking');
+                speakBtn.disabled = false;
+                speakStatus.textContent = 'Click to convert text to speech';
+            }
+        }
+
+        function displayResults(result) {
+            // Update display
+            originalText.textContent = result.text;
+            audioLanguage.textContent = result.language_code;
+            audioVoice.textContent = result.voice_gender;
+
+            // Store audio data
+            currentAudioData = result.audio_content;
+
+            // Setup play button
+            playAudioBtn.onclick = () => playAudio(result.audio_content);
+
+            // Setup download button
+            downloadBtn.onclick = () => downloadAudio(result.audio_content, result.text);
+
+            // Show results
+            resultsSection.style.display = 'block';
+            resultsSection.scrollIntoView({ behavior: 'smooth' });
+        }
+
+        function playAudio(base64Audio) {
+            if (currentAudio) {
+                currentAudio.pause();
+                currentAudio.currentTime = 0;
+            }
+
+            currentAudio = new Audio('data:audio/wav;base64,' + base64Audio);
+            currentAudio.play().catch(error => {
+                console.error('Error playing audio:', error);
+                alert('Error playing audio. Please try again.');
+            });
+        }
+
+        function downloadAudio(base64Audio, text) {
+            const audioBlob = new Blob([Uint8Array.from(atob(base64Audio), c => c.charCodeAt(0))], { type: 'audio/wav' });
+            const url = URL.createObjectURL(audioBlob);
+
+            const a = document.createElement('a');
+            a.href = url;
+            a.download = 'agri_audio.wav';
+            document.body.appendChild(a);
+            a.click();
+            document.body.removeChild(a);
+
+            URL.revokeObjectURL(url);
+        }
+    </script>
+
+    <script src="https://cdn.jsdelivr.net/npm/bootstrap@5.1.3/dist/js/bootstrap.bundle.min.js"></script>
+</body>
+</html>

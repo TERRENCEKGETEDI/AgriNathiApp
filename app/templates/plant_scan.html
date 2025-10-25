@@ -1,0 +1,419 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Plant Disease Scanner - AgriNathi</title>
+    <link href="https://cdn.jsdelivr.net/npm/bootstrap@5.1.3/dist/css/bootstrap.min.css" rel="stylesheet">
+    <link href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.0.0/css/all.min.css" rel="stylesheet">
+    <style>
+        body {
+            font-family: Arial, sans-serif;
+            margin: 0;
+            padding: 20px;
+            background-color: #f5f5f5;
+        }
+        .container {
+            max-width: 800px;
+            margin: 0 auto;
+            background: white;
+            padding: 20px;
+            border-radius: 8px;
+            box-shadow: 0 2px 10px rgba(0,0,0,0.1);
+        }
+        h1 {
+            color: #2e7d32;
+            text-align: center;
+        }
+        .upload-section {
+            text-align: center;
+            margin: 30px 0;
+            padding: 20px;
+            border: 2px dashed #4CAF50;
+            border-radius: 8px;
+            background: #f9f9f9;
+        }
+        .upload-section.dragover {
+            background: #e8f5e8;
+            border-color: #2e7d32;
+        }
+        #file-input {
+            display: none;
+        }
+        .upload-btn {
+            background: #4CAF50;
+            color: white;
+            padding: 12px 24px;
+            border: none;
+            border-radius: 5px;
+            cursor: pointer;
+            font-size: 16px;
+            margin: 10px;
+        }
+        .upload-btn:hover {
+            background: #45a049;
+        }
+        #preview {
+            max-width: 100%;
+            max-height: 300px;
+            margin: 20px 0;
+            border-radius: 8px;
+            display: none;
+        }
+        .results {
+            margin-top: 30px;
+            display: none;
+        }
+        .result-card {
+            background: #e8f5e8;
+            padding: 20px;
+            border-radius: 8px;
+            margin: 20px 0;
+        }
+        .disease-name {
+            font-size: 24px;
+            font-weight: bold;
+            color: #2e7d32;
+            margin-bottom: 10px;
+        }
+        .confidence {
+            font-size: 18px;
+            color: #666;
+            margin-bottom: 15px;
+        }
+        .treatment {
+            background: #fff3cd;
+            padding: 15px;
+            border-radius: 5px;
+            margin-top: 15px;
+            border-left: 4px solid #ffc107;
+        }
+        .treatment h3 {
+            margin-top: 0;
+            color: #856404;
+        }
+        .loading {
+            text-align: center;
+            padding: 40px;
+        }
+        .error {
+            background: #f8d7da;
+            color: #721c24;
+            padding: 15px;
+            border-radius: 5px;
+            margin: 20px 0;
+            display: none;
+        }
+        .progress-bar {
+            width: 100%;
+            height: 20px;
+            background: #f0f0f0;
+            border-radius: 10px;
+            overflow: hidden;
+            margin: 20px 0;
+            display: none;
+        }
+        .progress-fill {
+            height: 100%;
+            background: #4CAF50;
+            width: 0%;
+            transition: width 0.3s ease;
+        }
+    </style>
+</head>
+<body>
+    <!-- Navigation -->
+    <nav class="navbar navbar-expand-lg navbar-dark bg-success">
+        <div class="container">
+            <a class="navbar-brand" href="/">
+                <i class="fas fa-leaf me-2"></i>AgriNathi
+            </a>
+            <button class="navbar-toggler" type="button" data-bs-toggle="collapse" data-bs-target="#navbarNav">
+                <span class="navbar-toggler-icon"></span>
+            </button>
+            <div class="collapse navbar-collapse" id="navbarNav">
+                <ul class="navbar-nav ms-auto">
+                    <li class="nav-item">
+                        <a class="nav-link" href="/">Home</a>
+                    </li>
+                    <li class="nav-item">
+                        <a class="nav-link" href="/voice-recognition">Voice Assistant</a>
+                    </li>
+                    <li class="nav-item">
+                        <a class="nav-link" href="/weather">Weather</a>
+                    </li>
+                    <li class="nav-item">
+                        <a class="nav-link active" href="/plant-scan">Plant Scanner</a>
+                    </li>
+                    {% if session.user_role == 'admin' %}
+                    <li class="nav-item dropdown">
+                        <a class="nav-link dropdown-toggle" href="#" id="adminDropdown" role="button" data-bs-toggle="dropdown">
+                            <i class="fas fa-cog me-1"></i>Admin
+                        </a>
+                        <ul class="dropdown-menu">
+                            <li><a class="dropdown-item" href="/admin"><i class="fas fa-tachometer-alt me-2"></i>Dashboard</a></li>
+                            <li><a class="dropdown-item" href="/admin/users"><i class="fas fa-users me-2"></i>Users</a></li>
+                            <li><a class="dropdown-item" href="/admin/analytics"><i class="fas fa-chart-bar me-2"></i>Analytics</a></li>
+                            <li><a class="dropdown-item" href="/admin/settings"><i class="fas fa-cog me-2"></i>Settings</a></li>
+                            <li><hr class="dropdown-divider"></li>
+                            <li><a class="dropdown-item" href="/logout"><i class="fas fa-sign-out-alt me-2"></i>Logout</a></li>
+                        </ul>
+                    </li>
+                    {% else %}
+                    <li class="nav-item">
+                        <a class="nav-link" href="/logout">Logout</a>
+                    </li>
+                    {% endif %}
+                </ul>
+            </div>
+        </div>
+    </nav>
+
+    <div class="container" style="margin-top: 20px;">
+        <h1>🌱 Plant Disease Scanner</h1>
+
+        <div class="upload-section" id="upload-section">
+            <h2>Upload Plant Image</h2>
+            <p>Take a photo of your plant to detect diseases</p>
+            <input type="file" id="file-input" accept="image/*" capture="camera">
+            <br>
+            <button class="upload-btn" onclick="document.getElementById('file-input').click()">
+                📷 Choose Image
+            </button>
+            <p style="color: #666; font-size: 14px; margin-top: 10px;">
+                Supported formats: JPG, PNG, JPEG
+            </p>
+        </div>
+
+        <div class="progress-bar" id="progress-bar">
+            <div class="progress-fill" id="progress-fill"></div>
+        </div>
+
+        <img id="preview" alt="Plant preview">
+
+        <div class="loading" id="loading" style="display: none;">
+            <p>🔍 Analyzing plant image...</p>
+            <p>This may take a few moments</p>
+        </div>
+
+        <div class="error" id="error"></div>
+
+        <div class="results" id="results">
+            <div class="result-card">
+                <div class="disease-name" id="disease-name">Healthy Plant</div>
+                <div class="confidence" id="confidence">Confidence: 95%</div>
+                <p id="description">Your plant appears to be healthy with no visible signs of disease.</p>
+
+                <div class="treatment" id="treatment-section">
+                    <h3>💡 Care Recommendations</h3>
+                    <ul id="recommendations">
+                        <li>Continue regular watering and fertilization</li>
+                        <li>Monitor for any changes in leaf color or texture</li>
+                        <li>Maintain proper spacing between plants for air circulation</li>
+                    </ul>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <script>
+        let selectedFile = null;
+
+        const uploadSection = document.getElementById('upload-section');
+        const fileInput = document.getElementById('file-input');
+        const preview = document.getElementById('preview');
+        const loading = document.getElementById('loading');
+        const results = document.getElementById('results');
+        const error = document.getElementById('error');
+        const progressBar = document.getElementById('progress-bar');
+        const progressFill = document.getElementById('progress-fill');
+
+        // Drag and drop functionality
+        uploadSection.addEventListener('dragover', (e) => {
+            e.preventDefault();
+            uploadSection.classList.add('dragover');
+        });
+
+        uploadSection.addEventListener('dragleave', () => {
+            uploadSection.classList.remove('dragover');
+        });
+
+        uploadSection.addEventListener('drop', (e) => {
+            e.preventDefault();
+            uploadSection.classList.remove('dragover');
+            const files = e.dataTransfer.files;
+            if (files.length > 0) {
+                handleFileSelect(files[0]);
+            }
+        });
+
+        fileInput.addEventListener('change', (e) => {
+            if (e.target.files.length > 0) {
+                handleFileSelect(e.target.files[0]);
+            }
+        });
+
+        function handleFileSelect(file) {
+            if (!file.type.startsWith('image/')) {
+                showError('Please select a valid image file.');
+                return;
+            }
+
+            selectedFile = file;
+            const reader = new FileReader();
+            reader.onload = (e) => {
+                preview.src = e.target.result;
+                preview.style.display = 'block';
+                results.style.display = 'none';
+                error.style.display = 'none';
+            };
+            reader.readAsDataURL(file);
+
+            // Auto-analyze after showing preview
+            setTimeout(() => {
+                analyzePlant();
+            }, 1000);
+        }
+
+        function showError(message) {
+            error.textContent = message;
+            error.style.display = 'block';
+            loading.style.display = 'none';
+            progressBar.style.display = 'none';
+        }
+
+        function showProgress(percent) {
+            progressBar.style.display = 'block';
+            progressFill.style.width = percent + '%';
+        }
+
+        async function analyzePlant() {
+            if (!selectedFile) {
+                showError('Please select an image first.');
+                return;
+            }
+
+            loading.style.display = 'block';
+            results.style.display = 'none';
+            error.style.display = 'none';
+            progressBar.style.display = 'none';
+
+            try {
+                // Simulate analysis progress
+                showProgress(0);
+                await new Promise(resolve => setTimeout(resolve, 500));
+                showProgress(25);
+                await new Promise(resolve => setTimeout(resolve, 500));
+                showProgress(50);
+                await new Promise(resolve => setTimeout(resolve, 500));
+                showProgress(75);
+                await new Promise(resolve => setTimeout(resolve, 500));
+                showProgress(100);
+
+                // Mock analysis result (in real implementation, this would call your ML model)
+                const mockResult = getMockAnalysisResult();
+
+                displayResults(mockResult);
+
+            } catch (err) {
+                console.error('Analysis error:', err);
+                showError('Failed to analyze the image. Please try again.');
+            } finally {
+                loading.style.display = 'none';
+                progressBar.style.display = 'none';
+            }
+        }
+
+        function getMockAnalysisResult() {
+            // Mock results for demonstration
+            const diseases = [
+                {
+                    name: "Apple Black Rot",
+                    confidence: 87,
+                    description: "Black rot is a fungal disease that affects apples, pears, and other fruit trees.",
+                    recommendations: [
+                        "Remove and destroy infected fruit and leaves",
+                        "Prune infected branches 6-8 inches below visible symptoms",
+                        "Apply copper-based fungicide during dormant season",
+                        "Improve air circulation by proper pruning",
+                        "Avoid overhead watering to reduce humidity"
+                    ]
+                },
+                {
+                    name: "Tomato Late Blight",
+                    confidence: 92,
+                    description: "Late blight is a devastating disease that affects tomatoes and potatoes.",
+                    recommendations: [
+                        "Remove infected plants immediately",
+                        "Apply fungicide preventively every 7-10 days",
+                        "Ensure good drainage and avoid overhead watering",
+                        "Rotate crops and don't plant tomatoes in same location for 2-3 years",
+                        "Use resistant varieties when available"
+                    ]
+                },
+                {
+                    name: "Corn Gray Leaf Spot",
+                    confidence: 78,
+                    description: "Gray leaf spot is a common foliar disease of corn caused by fungi.",
+                    recommendations: [
+                        "Plant resistant corn hybrids",
+                        "Apply fungicide at tasseling if conditions are favorable for disease",
+                        "Ensure proper plant spacing for air circulation",
+                        "Avoid excessive nitrogen fertilization",
+                        "Rotate with non-host crops"
+                    ]
+                },
+                {
+                    name: "Healthy Plant",
+                    confidence: 95,
+                    description: "Your plant appears to be healthy with no visible signs of disease.",
+                    recommendations: [
+                        "Continue regular watering and fertilization",
+                        "Monitor for any changes in leaf color or texture",
+                        "Maintain proper spacing between plants for air circulation",
+                        "Keep soil pH appropriate for the plant type",
+                        "Ensure adequate sunlight exposure"
+                    ]
+                }
+            ];
+
+            // Randomly select a disease for demonstration
+            return diseases[Math.floor(Math.random() * diseases.length)];
+        }
+
+        function displayResults(result) {
+            document.getElementById('disease-name').textContent = result.name;
+            document.getElementById('confidence').textContent = `Confidence: ${result.confidence}%`;
+            document.getElementById('description').textContent = result.description;
+
+            const recommendationsList = document.getElementById('recommendations');
+            recommendationsList.innerHTML = '';
+
+            result.recommendations.forEach(rec => {
+                const li = document.createElement('li');
+                li.textContent = rec;
+                recommendationsList.appendChild(li);
+            });
+
+            results.style.display = 'block';
+        }
+
+        // In a real implementation, you would send the image to your backend:
+        /*
+        async function analyzePlant() {
+            const formData = new FormData();
+            formData.append('image', selectedFile);
+
+            const response = await fetch('/api/analyze-plant', {
+                method: 'POST',
+                body: formData
+            });
+
+            const result = await response.json();
+            displayResults(result);
+        }
+        */
+    </script>
+    <script src="https://cdn.jsdelivr.net/npm/bootstrap@5.1.3/dist/js/bootstrap.bundle.min.js"></script>
+</body>
+</html>

@@ -1,0 +1,458 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>User Management - AgriNathi Admin</title>
+    <link href="https://cdn.jsdelivr.net/npm/bootstrap@5.1.3/dist/css/bootstrap.min.css" rel="stylesheet">
+    <link href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.0.0/css/all.min.css" rel="stylesheet">
+    <style>
+        .sidebar {
+            min-height: 100vh;
+            background: linear-gradient(180deg, #2c3e50 0%, #34495e 100%);
+            box-shadow: 2px 0 10px rgba(0,0,0,0.1);
+        }
+        .sidebar .nav-link {
+            color: rgba(255,255,255,0.8);
+            padding: 0.75rem 1rem;
+            transition: all 0.3s ease;
+            border-radius: 5px;
+            margin: 2px 0;
+        }
+        .sidebar .nav-link:hover {
+            color: white;
+            background: rgba(255,255,255,0.1);
+            transform: translateX(5px);
+        }
+        .sidebar .nav-link.active {
+            color: white;
+            background: linear-gradient(90deg, #28a745, #20c997);
+            box-shadow: 0 2px 5px rgba(40, 167, 69, 0.3);
+        }
+        .sidebar .nav-link i {
+            width: 20px;
+            text-align: center;
+        }
+        .main-content {
+            background: linear-gradient(135deg, #f8f9fa 0%, #e9ecef 100%);
+            min-height: 100vh;
+        }
+        .welcome-header {
+            background: linear-gradient(135deg, #28a745 0%, #20c997 100%);
+            color: white;
+            padding: 2rem;
+            border-radius: 15px;
+            margin-bottom: 2rem;
+            box-shadow: 0 4px 15px rgba(0,0,0,0.1);
+        }
+        .stats-cards {
+            display: grid;
+            grid-template-columns: repeat(auto-fit, minmax(200px, 1fr));
+            gap: 1rem;
+            margin-bottom: 2rem;
+        }
+        .stat-card {
+            background: white;
+            border-radius: 12px;
+            padding: 1.5rem;
+            box-shadow: 0 2px 10px rgba(0,0,0,0.1);
+            border: none;
+            transition: all 0.3s ease;
+        }
+        .stat-card:hover {
+            transform: translateY(-3px);
+            box-shadow: 0 6px 20px rgba(0,0,0,0.15);
+        }
+        .stat-card.primary {
+            background: linear-gradient(135deg, #007bff 0%, #0056b3 100%);
+            color: white;
+        }
+        .stat-card.success {
+            background: linear-gradient(135deg, #28a745 0%, #1e7e34 100%);
+            color: white;
+        }
+        .stat-card.info {
+            background: linear-gradient(135deg, #17a2b8 0%, #117a8b 100%);
+            color: white;
+        }
+        .users-table-card {
+            background: white;
+            border-radius: 15px;
+            box-shadow: 0 4px 15px rgba(0,0,0,0.1);
+            overflow: hidden;
+        }
+        .table {
+            margin-bottom: 0;
+        }
+        .table thead th {
+            background: linear-gradient(135deg, #f8f9fa 0%, #e9ecef 100%);
+            border-bottom: 2px solid #dee2e6;
+            font-weight: 600;
+            color: #495057;
+            padding: 1rem;
+        }
+        .table tbody td {
+            padding: 1rem;
+            vertical-align: middle;
+        }
+        .badge {
+            font-size: 0.75rem;
+            padding: 0.5rem 0.75rem;
+            border-radius: 20px;
+        }
+        .role-select {
+            border: 1px solid #dee2e6;
+            border-radius: 6px;
+            padding: 0.25rem 0.5rem;
+            font-size: 0.875rem;
+            background: white;
+            transition: all 0.2s ease;
+        }
+        .role-select:focus {
+            outline: none;
+            border-color: #28a745;
+            box-shadow: 0 0 0 2px rgba(40, 167, 69, 0.25);
+        }
+        .btn-custom {
+            background: linear-gradient(45deg, #28a745, #20c997);
+            border: none;
+            color: white;
+            padding: 0.5rem 1rem;
+            border-radius: 6px;
+            font-weight: 500;
+            transition: all 0.3s ease;
+        }
+        .btn-custom:hover {
+            background: linear-gradient(45deg, #218838, #1aa085);
+            transform: translateY(-1px);
+            box-shadow: 0 4px 12px rgba(40, 167, 69, 0.3);
+        }
+        .search-input {
+            border: 2px solid #dee2e6;
+            border-radius: 8px;
+            padding: 0.75rem 1rem;
+            font-size: 1rem;
+            transition: all 0.3s ease;
+        }
+        .search-input:focus {
+            outline: none;
+            border-color: #28a745;
+            box-shadow: 0 0 0 3px rgba(40, 167, 69, 0.1);
+        }
+        .user-avatar {
+            width: 40px;
+            height: 40px;
+            border-radius: 50%;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            font-weight: bold;
+            color: white;
+        }
+        .avatar-admin {
+            background: linear-gradient(135deg, #007bff, #0056b3);
+        }
+        .avatar-user {
+            background: linear-gradient(135deg, #6c757d, #495057);
+        }
+    </style>
+</head>
+<body>
+    <div class="container-fluid">
+        <div class="row">
+            <!-- Sidebar -->
+            <div class="col-md-3 col-lg-2 px-0 sidebar">
+                <div class="d-flex flex-column">
+                    <div class="p-3">
+                        <h5 class="text-white mb-4">
+                            <i class="fas fa-leaf me-2"></i>AgriNathi Admin
+                        </h5>
+                        <nav class="nav flex-column">
+                            <a class="nav-link" href="{{ url_for('admin_dashboard') }}">
+                                <i class="fas fa-tachometer-alt me-2"></i>Dashboard
+                            </a>
+                            <a class="nav-link active" href="{{ url_for('admin_users') }}">
+                                <i class="fas fa-users me-2"></i>Users
+                            </a>
+                            <a class="nav-link" href="{{ url_for('admin_analytics') }}">
+                                <i class="fas fa-chart-bar me-2"></i>Analytics
+                            </a>
+                            <a class="nav-link" href="{{ url_for('admin_settings') }}">
+                                <i class="fas fa-cog me-2"></i>Settings
+                            </a>
+                            <hr class="my-3">
+                            <a class="nav-link" href="{{ url_for('index') }}">
+                                <i class="fas fa-arrow-left me-2"></i>Back to App
+                            </a>
+                            <a class="nav-link" href="{{ url_for('logout') }}">
+                                <i class="fas fa-sign-out-alt me-2"></i>Logout
+                            </a>
+                        </nav>
+                    </div>
+                </div>
+            </div>
+
+            <!-- Main Content -->
+            <div class="col-md-9 col-lg-10 main-content px-4 py-4">
+                <div class="welcome-header">
+                    <div class="d-flex justify-content-between align-items-center">
+                        <div>
+                            <h1 class="mb-2"><i class="fas fa-users me-3"></i>User Management</h1>
+                            <p class="mb-0 opacity-75">Manage user accounts, roles, and permissions for AgriNathi.</p>
+                        </div>
+                        <div class="text-end">
+                            <div class="h4 mb-1">{{ users|length }}</div>
+                            <small class="opacity-75">Total Registered Users</small>
+                        </div>
+                    </div>
+                </div>
+
+                <!-- User Statistics -->
+                <div class="stats-cards">
+                    <div class="stat-card primary">
+                        <div class="d-flex align-items-center">
+                            <div class="flex-grow-1">
+                                <h3 class="mb-1">{{ users|length }}</h3>
+                                <small class="opacity-75">Total Users</small>
+                            </div>
+                            <i class="fas fa-users fa-2x opacity-25"></i>
+                        </div>
+                    </div>
+                    <div class="stat-card success">
+                        <div class="d-flex align-items-center">
+                            <div class="flex-grow-1">
+                                <h3 class="mb-1">{{ users|selectattr('role', 'equalto', 'admin')|list|length }}</h3>
+                                <small class="opacity-75">Admin Users</small>
+                            </div>
+                            <i class="fas fa-user-shield fa-2x opacity-25"></i>
+                        </div>
+                    </div>
+                    <div class="stat-card info">
+                        <div class="d-flex align-items-center">
+                            <div class="flex-grow-1">
+                                <h3 class="mb-1">{{ users|selectattr('role', 'equalto', 'user')|list|length }}</h3>
+                                <small class="opacity-75">Regular Users</small>
+                            </div>
+                            <i class="fas fa-user fa-2x opacity-25"></i>
+                        </div>
+                    </div>
+                </div>
+
+                <!-- Users Table -->
+                <div class="users-table-card">
+                    <div class="card-header bg-light d-flex justify-content-between align-items-center">
+                        <h5 class="mb-0"><i class="fas fa-users me-2 text-success"></i>All Users</h5>
+                        <div class="d-flex align-items-center">
+                            <i class="fas fa-search text-muted me-2"></i>
+                            <input type="text" id="searchInput" class="search-input" placeholder="Search users by name, email, or location..." style="width: 300px;">
+                        </div>
+                    </div>
+                    <div class="card-body p-0">
+                        <div class="table-responsive">
+                            <table class="table table-hover" id="usersTable">
+                                <thead>
+                                    <tr>
+                                        <th>User</th>
+                                        <th>Contact</th>
+                                        <th>Location</th>
+                                        <th>Farm Size</th>
+                                        <th>Role</th>
+                                        <th>Registered</th>
+                                        <th>Last Login</th>
+                                        <th>Actions</th>
+                                    </tr>
+                                </thead>
+                                <tbody>
+                                    {% for user in users %}
+                                    <tr>
+                                        <td>
+                                            <div class="d-flex align-items-center">
+                                                <div class="user-avatar {{ 'avatar-admin' if user['role'] == 'admin' else 'avatar-user' }} me-3">
+                                                    {{ user.firstName[0] }}{{ user.lastName[0] }}
+                                                </div>
+                                                <div>
+                                                    <div class="fw-bold">{{ user.firstName }} {{ user.lastName }}</div>
+                                                    <small class="text-muted">ID: {{ user.id }}</small>
+                                                </div>
+                                            </div>
+                                        </td>
+                                        <td>
+                                            <div>
+                                                <div><i class="fas fa-envelope text-muted me-1"></i>{{ user.email }}</div>
+                                                <div><i class="fas fa-phone text-muted me-1"></i>{{ user.phone }}</div>
+                                            </div>
+                                        </td>
+                                        <td>{{ user.location.title() }}</td>
+                                        <td>{{ user.farmSize or 'Not specified' }}</td>
+                                        <td>
+                                            <select class="role-select" data-user-id="{{ user.id }}">
+                                                <option value="user" {{ 'selected' if user['role'] == 'user' else '' }}>User</option>
+                                                <option value="admin" {{ 'selected' if user['role'] == 'admin' else '' }}>Admin</option>
+                                            </select>
+                                        </td>
+                                        <td>
+                                            <div>
+                                                <div>{{ user.registrationDate[:10] if user.registrationDate else 'N/A' }}</div>
+                                                <small class="text-muted">{{ user.registrationDate[11:16] if user.registrationDate else '' }}</small>
+                                            </div>
+                                        </td>
+                                        <td>
+                                            <div>
+                                                <div>{{ user.lastLogin[:10] if user.lastLogin else 'Never' }}</div>
+                                                <small class="text-muted">{{ user.lastLogin[11:16] if user.lastLogin else '' }}</small>
+                                            </div>
+                                        </td>
+                                        <td>
+                                            <div class="btn-group" role="group">
+                                                <button class="btn btn-sm btn-outline-info" onclick="viewUserDetails('{{ user.id }}')" title="View Details">
+                                                    <i class="fas fa-eye"></i>
+                                                </button>
+                                                <button class="btn btn-sm btn-outline-danger" onclick="deleteUser('{{ user.id }}', '{{ user.firstName }} {{ user.lastName }}')" title="Delete User">
+                                                    <i class="fas fa-trash"></i>
+                                                </button>
+                                            </div>
+                                        </td>
+                                    </tr>
+                                    {% endfor %}
+                                </tbody>
+                            </table>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <!-- User Details Modal -->
+    <div class="modal fade" id="userDetailsModal" tabindex="-1">
+        <div class="modal-dialog modal-lg">
+            <div class="modal-content">
+                <div class="modal-header">
+                    <h5 class="modal-title">User Details</h5>
+                    <button type="button" class="btn-close" data-bs-dismiss="modal"></button>
+                </div>
+                <div class="modal-body" id="userDetailsContent">
+                    <!-- User details will be loaded here -->
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <script src="https://cdn.jsdelivr.net/npm/bootstrap@5.1.3/dist/js/bootstrap.bundle.min.js"></script>
+    <script>
+        // Search functionality
+        document.getElementById('searchInput').addEventListener('keyup', function() {
+            const searchTerm = this.value.toLowerCase();
+            const rows = document.querySelectorAll('#usersTable tbody tr');
+
+            rows.forEach(row => {
+                const text = row.textContent.toLowerCase();
+                row.style.display = text.includes(searchTerm) ? '' : 'none';
+            });
+        });
+
+        // Role change functionality
+        document.querySelectorAll('.role-select').forEach(select => {
+            select.addEventListener('change', function() {
+                const userId = this.dataset.userId;
+                const newRole = this.value;
+
+                fetch('/admin/users/' + userId + '/role', {
+                    method: 'POST',
+                    headers: {
+                        'Content-Type': 'application/json',
+                    },
+                    body: JSON.stringify({ role: newRole })
+                })
+                .then(response => response.json())
+                .then(data => {
+                    if (data.success) {
+                        // Show success message
+                        showAlert('Role updated successfully', 'success');
+                    } else {
+                        showAlert('Error: ' + data.message, 'danger');
+                        // Revert selection
+                        this.value = this.value === 'admin' ? 'user' : 'admin';
+                    }
+                })
+                .catch(error => {
+                    console.error('Error:', error);
+                    showAlert('An error occurred while updating the role', 'danger');
+                    // Revert selection
+                    this.value = this.value === 'admin' ? 'user' : 'admin';
+                });
+            });
+        });
+
+        function viewUserDetails(userId) {
+            // Find user data - passed from server
+            // Note: users data is embedded in the template
+            const userList = JSON.parse('{{ users|tojson|safe }}');
+            const user = userList.find(u => u.id === userId);
+
+            if (user) {
+                const content = `
+                    <div class="row">
+                        <div class="col-md-6">
+                            <h6>Personal Information</h6>
+                            <p><strong>Name:</strong> ${user.firstName} ${user.lastName}</p>
+                            <p><strong>Email:</strong> ${user.email}</p>
+                            <p><strong>Phone:</strong> ${user.phone}</p>
+                            <p><strong>Location:</strong> ${user.location}</p>
+                            <p><strong>Farm Size:</strong> ${user.farmSize || 'Not specified'}</p>
+                        </div>
+                        <div class="col-md-6">
+                            <h6>Account Information</h6>
+                            <p><strong>User ID:</strong> ${user.id}</p>
+                            <p><strong>Role:</strong> <span class="badge bg-${user.role === 'admin' ? 'primary' : 'secondary'}">${user.role}</span></p>
+                            <p><strong>Registered:</strong> ${user.registrationDate ? new Date(user.registrationDate).toLocaleDateString() : 'N/A'}</p>
+                            <p><strong>Last Login:</strong> ${user.lastLogin ? new Date(user.lastLogin).toLocaleDateString() : 'Never'}</p>
+                        </div>
+                    </div>
+                `;
+                document.getElementById('userDetailsContent').innerHTML = content;
+                new bootstrap.Modal(document.getElementById('userDetailsModal')).show();
+            }
+        }
+
+        function deleteUser(userId, userName) {
+            if (confirm(`Are you sure you want to delete user: ${userName}? This action cannot be undone.`)) {
+                fetch('/admin/users/' + userId, {
+                    method: 'DELETE',
+                    headers: {
+                        'Content-Type': 'application/json',
+                    }
+                })
+                .then(response => response.json())
+                .then(data => {
+                    if (data.success) {
+                        showAlert('User deleted successfully', 'success');
+                        setTimeout(() => location.reload(), 1500);
+                    } else {
+                        showAlert('Error: ' + data.message, 'danger');
+                    }
+                })
+                .catch(error => {
+                    console.error('Error:', error);
+                    showAlert('An error occurred while deleting the user', 'danger');
+                });
+            }
+        }
+
+        function showAlert(message, type) {
+            const alertDiv = document.createElement('div');
+            alertDiv.className = `alert alert-${type} alert-dismissible fade show position-fixed`;
+            alertDiv.style.cssText = 'top: 20px; right: 20px; z-index: 9999; min-width: 300px;';
+            alertDiv.innerHTML = `
+                ${message}
+                <button type="button" class="btn-close" data-bs-dismiss="alert"></button>
+            `;
+            document.body.appendChild(alertDiv);
+
+            setTimeout(() => {
+                alertDiv.remove();
+            }, 5000);
+        }
+    </script>
+</body>
+</html>
